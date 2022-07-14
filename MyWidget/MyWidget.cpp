@@ -94,7 +94,7 @@ osg::ref_ptr<osg::Geometry> cy(int radius, osg::Vec3 centre,float h)
     cy1->setCenter(centre);
     cy1->setRadius(radius);
     osg::ref_ptr<osg::ShapeDrawable> sd6 = new osg::ShapeDrawable(cy1);
-    sd6->setColor(osg::Vec4(1, 1, 0, 0.5));
+    sd6->setColor(osg::Vec4(1, 1, 1, 0.5));
     geom = sd6;
     return geom.get();
 }
