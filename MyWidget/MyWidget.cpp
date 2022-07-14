@@ -6,15 +6,13 @@
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
 #include <QResizeEvent>
-#include <osg/TexGen>
-#include <osg/Texture2D>
-#include <osg/TexEnv>
 #include <osg/StateSet>
-#include <osg/Material>
 #include <osgModeling/BoolOperator>
 #include <osgUtil/TriStripVisitor>
 #include <osg/ShapeDrawable>
-
+#include <osgModeling/Extrude>
+#include <osgModeling/Lathe>
+#include <osgModeling/Nurbs>
 
 
 MyWidget::MyWidget(QWidget* parent)
@@ -46,34 +44,96 @@ void MyWidget::resizeEvent(QResizeEvent* ev)
     
 }
 
-
-osg::ref_ptr<osg::StateSet> createTexture2DState(osg::ref_ptr<osg::Image> image)
+osg::ref_ptr<osg::Geometry> createFirstOperator()
 {
-    //创建状态集对象
-    osg::ref_ptr<osg::StateSet> stateset = new osg::StateSet();
+#if 0
+    osg::ref_ptr<osgModeling::Curve> profile = new osgModeling::Curve;
+    profile->addPathPoint(osg::Vec3(-0.2f, 0.0f, 0.0f));
+    profile->addPathPoint(osg::Vec3(-0.2f, 0.0f, 2.0f));
+    osg::ref_ptr<osgModeling::Lathe> geom = new osgModeling::Lathe;
+    geom->setGenerateParts(osgModeling::Model::ALL_PARTS);
+    geom->setLatheSegments(16);
+    geom->setLatheOrigin(osg::Vec3(0.0f, 0.0f, -0.8f));
+    geom->setLatheAxis(osg::Vec3(0.0f, 0.0f, 1.0f));
+    geom->setProfile(profile.get());
+    geom->update();
+#else
+    double cp[5][3] = {
+        {1.0f,0.0f,1.0f}, {-1.0f,0.0f,1.0f}, {-1.0f,0.0f,-1.0f},
+        {1.0f,0.0f,-1.0f}, {1.0f,0.0f,1.0f} };
+    osg::ref_ptr<osgModeling::Curve> profile = new osgModeling::Curve;
+    profile->setPath(15, &cp[0][0]);
+    osg::ref_ptr<osgModeling::Extrude> geom = new osgModeling::Extrude;
+    geom->setGenerateParts(osgModeling::Model::ALL_PARTS);
+    geom->setExtrudeDirection(osg::Vec3(0.0f, 1.0f, 0.0f));
+    geom->setExtrudeLength(1.0f);
+    geom->setProfile(profile.get());
+    geom->update();
+#endif
+    return geom.get();
+}
 
-    //创建二维纹理对象
-    osg::ref_ptr<osg::Texture2D> texture = new osg::Texture2D();
-    texture->setDataVariance(osg::Object::DYNAMIC);
-    //设置贴图
-    texture->setImage(image.get());
+osg::ref_ptr<osg::Geometry> createSecondOperator()
+{
+#if 1
+    double r = 0.5f;
+    double knotsU[12] = { 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4 };
+    double knotsV[8] = { 0, 0, 0, 1, 1, 2, 2, 2 };
+    double ctrlAndWeightPts[9][5][4] = {
+        {{0,0,r,1}, { r, 0,r,1}, { r, 0,0,2}, { r, 0,-r,1}, {0,0,-r,1}},
+        {{0,0,r,1}, { r,-r,r,1}, { r,-r,0,2}, { r,-r,-r,1}, {0,0,-r,1}},
+        {{0,0,r,2}, { 0,-r,r,2}, { 0,-r,0,4}, { 0,-r,-r,2}, {0,0,-r,2}},
+        {{0,0,r,1}, {-r,-r,r,1}, {-r,-r,0,2}, {-r,-r,-r,1}, {0,0,-r,1}},
+        {{0,0,r,1}, {-r, 0,r,1}, {-r, 0,0,2}, {-r, 0,-r,1}, {0,0,-r,1}},
+        {{0,0,r,1}, {-r, r,r,1}, {-r, r,0,2}, {-r, 1,-r,1}, {0,0,-r,1}},
+        {{0,0,r,2}, { 0, r,r,2}, { 0, r,0,4}, { 0, r,-r,2}, {0,0,-r,2}},
+        {{0,0,r,1}, { r, r,r,1}, { r, r,0,2}, { r, r,-r,1}, {0,0,-r,1}},
+        {{0,0,r,1}, { r, 0,r,1}, { r, 0,0,2}, { r, 0,-r,1}, {0,0,-r,1}} };
+    osg::ref_ptr<osgModeling::NurbsSurface> geom = new osgModeling::NurbsSurface(
+        12, &knotsU[0], 8, &knotsV[0], 20, 4, &ctrlAndWeightPts[0][0][0], 3, 3, 16, 16);
+#else
+    double cp[5][3] = {
+        {0.5f,1.0f,0.0f}, {-0.5f,0.0f,0.0f}, {0.5f,-1.0f,0.0f},
+        {1.5f,0.0f,0.0f}, {0.5f,1.0f,0.0f} };
+    osg::ref_ptr<osgModeling::Curve> profile = new osgModeling::Curve;
+    profile->setPath(15, &cp[0][0]);
+    osg::ref_ptr<osgModeling::Extrude> geom = new osgModeling::Extrude;
+    geom->setGenerateParts(osgModeling::Model::ALL_PARTS);
+    geom->setExtrudeLength(2.0f);
+    geom->setProfile(profile.get());
+    geom->update();
+#endif
+    return geom.get();
+}
 
-    texture->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR_MIPMAP_LINEAR);
-    texture->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
-    texture->setWrap(osg::Texture::WRAP_S, osg::Texture::REPEAT);
-    texture->setWrap(osg::Texture::WRAP_T, osg::Texture::REPEAT);
+osg::ref_ptr<osg::Node> createBoolean()
+{
+    // A boolean operation requires input Model instances because it uses the BSP tree to finish the work.
+    // We could generate Model objects both from Geometry instances or derived classes (e.g. Extrude, Lathe).
+    osg::ref_ptr<osgModeling::Model> model1 = new osgModeling::Model(*createFirstOperator());
+    osg::ref_ptr<osgModeling::Model> model2 = new osgModeling::Model(*createSecondOperator());
 
-    stateset->setTextureAttributeAndModes(0, texture.get(), osg::StateAttribute::ON);
-    stateset->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON |
-        osg::StateAttribute::PROTECTED);
-    stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF |
-        osg::StateAttribute::PROTECTED);
+    // Choose boolean method: Intersection, Union or Difference.
+    osg::ref_ptr<osgModeling::BoolOperator> boolOp = new osgModeling::BoolOperator;
+    boolOp->setMethod(osgModeling::BoolOperator::BOOL_INTERSECTION);
+    boolOp->setOperands(model1.get(), model2.get());
 
-    return stateset.get();
+    // Calculate and output the result into a new geometry.
+    // Be careful, it may cost long time or even crash if you input a too complex model.
+    osg::ref_ptr<osg::Geometry> result = new osg::Geometry;
+    boolOp->output(result.get());
+
+    // A triangle strip generator should be used here, otherwise too many independent triangles may cause the graphics system crash. 
+    osgUtil::TriStripVisitor tsv;
+    tsv.stripify(*result);
+
+    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+    geode->addDrawable(result.get());
+    return geode;
 }
 
 
-osg::ref_ptr<osg::Geometry> sph(int radius, osg::Vec3 centre)
+osg::ref_ptr<osg::Geometry> sph(float radius, osg::Vec3 centre)
 {
 	// 创建一个用于保存几何信息的对象
 	osg::ref_ptr<osg::Geometry> geom = new osg::Geometry;
@@ -121,24 +181,10 @@ void MyWidget::initWindow()
 {
     osgViewer::Viewer* pViewer = _pOsgQOpenGLWidget->getOsgViewer();
     pViewer->setCameraManipulator(new osgGA::TrackballManipulator);
-	osg::ref_ptr<osg::Group> rpGroup = new osg::Group;
-	osg::ref_ptr<osg::Geometry> one = sph(5, osg::Vec3(0, 0, 0));
-	osg::ref_ptr<osg::Geometry> one1 = sph(5, osg::Vec3(0, 0, 30));
-	osg::ref_ptr<osg::Geometry> one11 = Createboolean(osgModeling::BoolOperator::BOOL_UNION, one, one1);
 
-	osg::ref_ptr<osg::Geometry> two = sph(5, osg::Vec3(20, 0, 0));
-	osg::ref_ptr<osg::Geometry> two1 = sph(5, osg::Vec3(20, 0, 5));
+    osg::ref_ptr<osg::Group> root = new osg::Group;
+    root->addChild(createBoolean().get());
 
-	osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-
-	geode->addDrawable(two.get());
-	geode->addDrawable(two1.get());
-
-   // osg::ref_ptr<osg::Geode>geode = lathe_main->asGroup()->getChild(0)->asGeode();
-   // osg::Geometry* geom = dynamic_cast<osg::Geometry*>(geode->getDrawable(0));
-	rpGroup->addChild(one11);
-	rpGroup->addChild(geode);
-	
-	pViewer->setSceneData(rpGroup.get());
+	pViewer->setSceneData(root.get());
 }
 
