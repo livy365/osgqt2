@@ -169,7 +169,7 @@ osg::ref_ptr<osg::Geometry> Createboolean(osgModeling::BoolOperator::Method mMet
     osg::ref_ptr<osg::Geometry> mGeom = new osg::Geometry;
 
     mBoolOperator->output(mGeom);
-    // A triangle strip generator should be used here, otherwise too many independent triangles may cause the graphics system crash. 
+    // A triangle strip generator should be used here, otherwise too many independent triangles may cause the graphics system crash. llllll
     osgUtil::TriStripVisitor tsv;
     tsv.stripify(*mGeom);
     return mGeom;
