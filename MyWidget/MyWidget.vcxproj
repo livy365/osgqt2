@@ -92,19 +92,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="nji.cpp" />
-    <ClCompile Include="updatenode.cpp" />
     <QtRcc Include="MyWidget.qrc" />
     <QtUic Include="MyWidget.ui" />
     <QtMoc Include="MyWidget.h" />
-    <ClCompile Include="InfoVisitor.cpp" />
     <ClCompile Include="MyWidget.cpp" />
     <ClCompile Include="main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="InfoVisitor.h" />
-    <ClInclude Include="nji.h" />
-    <ClInclude Include="updatenode.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

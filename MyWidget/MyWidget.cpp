@@ -1,6 +1,5 @@
 #include "MyWidget.h"
 #include "ui_mywidget.h"
-#include"nji.h"
 #include <osgViewer/Viewer>
 #include <osg/Node>
 #include <osgDB/ReadFile>
